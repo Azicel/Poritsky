@@ -16,8 +16,8 @@ import pdfkit
 
 
 class DataSet:
-    def __init__(self, file_name: str, job: str):
-        self.file_name = file_name
+    def __init__(self, file: str, job: str):
+        self.file_name = file
         self.vacancies_objects = [Vacancy(vac) for vac in self.csv_reader(self.file_name)]
 
     @staticmethod
@@ -25,8 +25,8 @@ class DataSet:
         return ' '.join(re.sub(re.compile('<.*?>'), '', raw_html).replace('\n', ';').split())
 
     @staticmethod
-    def csv_reader(file_name: str) -> (List[str], List[List[str]]):
-        with open(file_name, 'r', encoding="utf-8-sig") as csvfile:
+    def csv_reader(file: str) -> (List[str], List[List[str]]):
+        with open(file, 'r', encoding="utf-8-sig") as csvfile:
             csvreader = csv.reader(csvfile)
             data = []
             titles = csvreader.__next__()
