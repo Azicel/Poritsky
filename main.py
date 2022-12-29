@@ -3,9 +3,9 @@ import itertools
 import re
 from enum import Enum
 from typing import List, Dict
+from unittest import TestCase
 
 import matplotlib.pyplot as plt
-import numpy
 import numpy as np
 from openpyxl import Workbook
 from openpyxl.styles import Font, Border, Side
@@ -19,6 +19,7 @@ class DataSet:
     """
     Класс необходимый для первичной инициализации данных для последущей обработки
     """
+
     def __init__(self, file: str, job: str):
         """Инициализация класса, куда передаем имя файла, из которого берется информация по вакансиям
 
@@ -63,14 +64,24 @@ class DataSet:
             inputconnect.print()
             rep.generate_image(job=job, data=inputconnect)
             rep.generate_excel(job=job, data=inputconnect)
-            rep.generate_pdf(job=job,data=inputconnect)
+            rep.generate_pdf(job=job, data=inputconnect)
             return data
 
 
 class Salary:
     """
     Класс, в котором содержутся данные по зарплате в вакансии: вилка от и до, а также валюта
+
+    >>> type(Salary('30000','50000','RUR')).__name__
+    'Salary'
+    >>> Salary('30000','50000','RUR').salary_from
+    '30000'
+    >>> Salary('30000','50000','RUR').salary_to
+    '50000'
+    >>> Salary('30000','50000','RUR').salary_currency
+    'RUR'
     """
+
     def __init__(self, salary_from, salary_to, salary_currency):
         """
         Инициализация класса
@@ -88,11 +99,23 @@ class Vacancy:
     """
     Класс, отвечающий за тип полученных данных, содержащий имена, зарплату, местоположение и дату публикации вакансии
     """
+
     def __init__(self, dic_vac):
         """
             Первичная инициализация вакансии, перевод из словоря в тип Vacancy
 
         :param dic_vac: словарь, откуда берутся данные
+
+        >>> type(Vacancy({'name':'Программист','salary_from':'30000','salary_to':'50000','salary_currency':'RUR', 'area_name':'Москва', 'published_at':'2022-07-05T18:19:30+0300'})).__name__
+        'Vacancy'
+        >>> Vacancy({'name':'Программист','salary_from':'30000','salary_to':'50000','salary_currency':'RUR', 'area_name':'Москва', 'published_at':'2022-07-05T18:19:30+0300'}).name
+        'Программист'
+        >>> Vacancy({'name':'Программист','salary_from':'30000','salary_to':'50000','salary_currency':'RUR', 'area_name':'Москва', 'published_at':'2022-07-05T18:19:30+0300'}).salary
+        <main.Salary object>
+        >>> Vacancy({'name':'Программист','salary_from':'30000','salary_to':'50000','salary_currency':'RUR', 'area_name':'Москва', 'published_at':'2022-07-05T18:19:30+0300'}).area_name
+        'Москва'
+        >>> Vacancy({'name':'Программист','salary_from':'30000','salary_to':'50000','salary_currency':'RUR', 'area_name':'Москва', 'published_at':'2022-07-05T18:19:30+0300'}).published_at
+        '2022-07-05T18:19:30+0300'
         """
         self.name = dic_vac['name']
         self.salary = Salary(dic_vac['salary_from'], dic_vac['salary_to'], dic_vac['salary_currency'])
@@ -100,11 +123,11 @@ class Vacancy:
         self.published_at = dic_vac['published_at']
 
 
-
 class InputConect:
     """
     Класс в котором обрабатываются полученные данные, и имеющий возможность вывести их
     """
+
     def __init__(self):
         """
         Инициализация класса, просто создается нужный для работы класса список словарей
@@ -265,26 +288,37 @@ class InputConect:
             city_percent[vac.area_name] = 1
         return city_percent
 
-    def get_avg_val(self, dic_sal: Dict, dic_count: Dict):
+    @staticmethod
+    def get_avg_val(dic_sal: Dict, dic_count: Dict):
         """
         Получение средних значений из двух разных словарей с одинаковыми ключами
 
         :param dic_sal: Словарь в котором надо получить средние значения
         :param dic_count: Словарь в котором содержатся данные о количестве значений
         :return: Новый словарь со средним
+
+        >>> InputConect.get_avg_val({1:100,2:300,3:500,4:700,5:600},{1:50,2:100,3:50,4:7,5:3})
+        {1: 2, 2: 3, 3: 10, 4: 100, 5: 200}
+        >>> InputConect.get_avg_val({1:100,2:300,3:500},{1:50,2:100,3:50,4:7,5:3})
+        {1: 2, 2: 3, 3: 10}
         """
         for key in dic_sal:
             if dic_count[key] != 0:
                 dic_sal[key] = int(dic_sal[key] / dic_count[key])
         return dic_sal
 
-    def get_avg_count(self, dic_sal: Dict, count: int):
+    @staticmethod
+    def get_avg_count(dic_sal: Dict, count: int):
         """
         Получение среднего значения по изначально известному количеству
 
         :param dic_sal: Словарь с значениями
         :param count: Количество значений
         :return: Словарь со средними
+        >>> InputConect.get_avg_count({1:100,2:300,3:500,4:700,5:600},5)
+        {1: 20.0, 2: 60.0, 3: 100.0, 4: 140.0, 5: 120.0}
+        >>> InputConect.get_avg_count({1:100,2:300},3)
+        {1: 33.3333, 2: 100.0}
         """
         for key in dic_sal.copy():
             dic_sal[key] = dic_sal[key] / count
@@ -294,7 +328,8 @@ class InputConect:
                 dic_sal[key] = round(dic_sal[key], 4)
         return dic_sal
 
-    def get_correct_data(self, date: str):
+    @staticmethod
+    def get_correct_data(date: str):
         """
         Получение года
 
@@ -303,16 +338,39 @@ class InputConect:
         """
         return int(date[0:4])
 
-    def sort_money(self, vac: Vacancy):
+    @staticmethod
+    def sort_money(vac: Vacancy):
         """
         Нахождние средней зарплаты
 
         :param vac: вакансия
         :return: средняя зарплата
+        >>> InputConect.sort_money( Vacancy({'name':'Программист','salary_from':'30000','salary_to':'50000','salary_currency':'RUR', 'area_name':'Москва', 'published_at':'2022-07-05T18:19:30+0300'}))
+        40000.0
         """
         salary_from = int(vac.salary.salary_from.split('.')[0])
         salary_to = int(vac.salary.salary_to.split('.')[0])
         return (salary_from + salary_to) / 2 * currency_to_rub[vac.salary.salary_currency]
+
+
+class InputConect_test(TestCase):
+    def test_sort_money(self):
+        self.assertEqual(Vacancy(
+            {'name': 'Программист', 'salary_from': '30000', 'salary_to': '50000', 'salary_currency': 'RUR',
+             'area_name': 'Москва', 'published_at': '2022-07-05T18:19:30+0300'}), 40000)
+        self.assertEqual(Vacancy(
+            {'name': 'Программист', 'salary_from': '30000', 'salary_to': '50000', 'salary_currency': 'RUR',
+             'area_name': 'Москва', 'published_at': '2022-07-05T18:19:30+0300'}), 40000)
+        self.assertEqual('30432', AssertionError, msg='Wrong type')
+
+    def test_get_avg_count(self):
+        self.assertEqual(InputConect.get_avg_count({1: 100, 2: 300, 3: 500, 4: 700, 5: 600}, 5),
+                         {1: 20.0, 2: 60.0, 3: 100.0, 4: 140.0, 5: 120.0})
+        self.assertEqual(InputConect.get_avg_count({1: 100, 2: 300}, 3), {1: 33.3333, 2: 100.0})
+
+    def test_get_avg_val(self):
+        self.assertEqual(InputConect.get_avg_val({1:100,2:300,3:500,4:700,5:600},{1:50,2:100,3:50,4:7,5:3}),{1: 2, 2: 3, 3: 10, 4: 100, 5: 200})
+        self.assertEqual(InputConect.get_avg_val({1:100,2:300,3:500},{1:50,2:100,3:50,4:7,5:3}),{1: 2, 2: 3, 3: 10})
 
 
 class Report:
@@ -344,7 +402,7 @@ class Report:
         wb.save(filename="report.xlsx")
 
     @staticmethod
-    def name_column(columns, ws):
+    def name_column(columns: list[str], ws):
         """
         Оглавление столбцов
         :param columns: название столбцов
@@ -386,7 +444,7 @@ class Report:
         plt.savefig('graph.png')
 
     @staticmethod
-    def create_diagramm_vacs(data, job, width, x_axis_years, сount_graph):
+    def create_diagramm_vacs(data: InputConect, job: str, width: float, x_axis_years, сount_graph):
         """
         Создание вертикально диаграммы с кол-вом вакансий в году
 
@@ -407,7 +465,7 @@ class Report:
         сount_graph.grid(True, axis='y')
 
     @staticmethod
-    def create_diagramm_sal(data, job, sal_graph, width, x_axis_years):
+    def create_diagramm_sal(data: InputConect, job: str, sal_graph, width: float, x_axis_years):
         """
         Создание вертикальной диаграммы по зарплатам в году
 
@@ -428,7 +486,7 @@ class Report:
         sal_graph.grid(True, axis='y')
 
     @staticmethod
-    def create_invert_diagramm(city_sal, data, job):
+    def create_invert_diagramm(city_sal, data: InputConect, job: str):
         """
         Создание горизонтальной диаграммы
 
@@ -445,7 +503,7 @@ class Report:
         city_sal.grid(True, axis='x')
 
     @staticmethod
-    def create_pie_charm(city_job, data, job):
+    def create_pie_charm(city_job, data: InputConect, job: str):
         """
         Создание круговой диаграммы
 
@@ -462,14 +520,14 @@ class Report:
         city_job.axis('scaled')
 
     @staticmethod
-    def generate_pdf(job:str, data:InputConect):
+    def generate_pdf(job: str, data: InputConect):
         """
         Создание пдф файла с таблицами и картикной
 
         :param job: название профессии
         :param data: данные
         """
-        image="graph.png"
+        image = "graph.png"
         year_headers = ['Год', 'Средняя зарплата', f'Средняя зарплата по професии - {job}',
                         'Количество вакансий', f'Количество вакансий {job} в год']
         city_headers = ['Город', 'Уровень Зарплат', 'Доля вакансий']
@@ -487,20 +545,20 @@ class Report:
                                                     data.city_sal.values(),
                                                     data.city_percent.values())
                      }
-        pdf_templ = template.render( {'image_file': image,
-             'image_style': 'style="max-width:1024px; max-height:680px"',
-             'salary_data': year_data,
-             'city_data': city_data,
-             'header_year': year_headers,
-             'header_city': city_headers,
-             'profession_name': f"{job}",
-             'h1_style': 'style="text-align:center; font-size:32px"',
-             'h2_style': 'style="text-align:center"',
-             'cell_style_none': "style=''",
-             'cell_style': 'style="border:1px solid black; border-collapse: collapse; font-size: 16px; height: 19pt;'
-                           'padding: 5px; text-align:center"'})
+        pdf_templ = template.render({'image_file': image,
+                                     'image_style': 'style="max-width:1024px; max-height:680px"',
+                                     'salary_data': year_data,
+                                     'city_data': city_data,
+                                     'header_year': year_headers,
+                                     'header_city': city_headers,
+                                     'profession_name': f"{job}",
+                                     'h1_style': 'style="text-align:center; font-size:32px"',
+                                     'h2_style': 'style="text-align:center"',
+                                     'cell_style_none': "style=''",
+                                     'cell_style': 'style="border:1px solid black; border-collapse: collapse; font-size: 16px; height: 19pt;'
+                                                   'padding: 5px; text-align:center"'})
         config = pdfkit.configuration(wkhtmltopdf=r'E:\wkhtmltopdf\bin\wkhtmltopdf.exe')
-        pdfkit.from_string(pdf_templ, job, configuration=config, options={'enable-local-file-access': None})
+        pdfkit.from_string(pdf_templ, job + '.pdf', configuration=config, options={'enable-local-file-access': None})
 
 
 class Translate(Enum):
